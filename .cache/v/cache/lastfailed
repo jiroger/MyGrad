@@ -1,0 +1,9 @@
+{
+  "tests/test_add.py": true,
+  "tests/test_chainrule.py": true,
+  "tests/test_divide.py": true,
+  "tests/test_multiply.py": true,
+  "tests/test_power.py": true,
+  "tests/test_reshape.py": true,
+  "tests/test_tensor.py": true
+}

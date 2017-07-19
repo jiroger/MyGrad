@@ -82,9 +82,18 @@ class Tensor(object):
             if a var is a Tensor already, append it to `tensor_vars`. 
             
             Otherwise, cast it as a **constant** Tensor, and then append it"""
+        tensor_vars = []
+        for i in input_vars:
+            if isinstance(i, Tensor):
+                tensor_vars.append(i)
+            else:
+                t1 = Tensor(i, constant=True)
+                tensor_vars.append(t1)
         ##########################################################################
 
         ## STUDENT CODE HERE ###################################################
+        f = Op()
+        op_out = f(*tensor_vars, *op_args, **op_kwargs)
         """ Initialize the operation class, references as `f`. Perform the forward-pass
             of `f` by passing it the *unpacked* `tensor_vars`, *unpacked* `op_args`,
             and *unpacked* `op_kwargs`. This final one you do via: **op_kwargs.
@@ -97,13 +106,19 @@ class Tensor(object):
            should be a constant or not. This should be saved as the variable 
            `is_const`, and it should hold a boolean value"""
         ##########################################################################
-
+        is_const = True
+        for i in tensor_vars:
+            if i._constant == False:
+                is_const = False
+        
         scalar_op = f.scalar_only and not is_const
         scalar_input = any((var.scalar_only and not var.constant) for var in tensor_vars)
         scalar_only = scalar_op or scalar_input
 
 
         ## STUDENT CODE HERE ###################################################
+        return Tensor(op_out, constant = is_const , _scalar_only = scalar_only, _creator = f)
+
         """Return the result of the forward pass as a Tensor. Note that _op is a 
            **class method**. This means that `cls` references `Tensor`.
            
@@ -137,6 +152,9 @@ class Tensor(object):
             
             raise Exception("Invalid Backprop: scalar-only violation")
             """
+        if self._scalar_only == True and self.data.ndim > 0:
+            raise Exception("Invalid Backprop: scalar-only violation")
+            
         ##########################################################################
 
         ## STUDENT CODE HERE ###################################################
@@ -146,19 +164,32 @@ class Tensor(object):
             Otherwise, ensure that `grad` is a numpy array. Simply passing it
             through np.asarray is sufficient for this"""
         ##########################################################################
-
+        if grad == None:
+            if self.data.ndim == 0:
+                grad = np.array(1)
+            else:
+                grad = np.ones(self.data.shape) 
+        else:
+            grad = np.asarray(grad)
 
         ## STUDENT CODE HERE ###################################################
         """ If self.grad is `None`, set its value to grad. 
         
             Otherwise, accumulate it with `grad` and pass the result through np.asarray"""
+        if self.grad == None:
+            self.grad = grad
+        else:
+            self.grad += grad
         ##########################################################################
 
         ## STUDENT CODE HERE ###################################################
         """ If this Tensor has a creator, propagate `grad` **NOT `self.grad`**
             backward to its creator"""
+        if self._creator is not None:
+            self._creator.backprop(grad)
+            
         ##########################################################################
-        pass
+        
 
 
     def null_gradients(self):
